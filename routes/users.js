@@ -21,9 +21,9 @@ function asyncHandler(cb) {
 
 // Route that returns a list of users.
 // router.get('/', authenticateUser, asyncHandler(async (req, res) => {
-router.get('/', asyncHandler(async (req, res) => {
-  let users = await Users.findAll();
-  res.json(users);
+router.get('/', authenticateUser, asyncHandler(async (req, res) => {
+  // let users = await Users.findAll();
+  res.json(req.currentUser);
 }));
 
 // Send a PUT request to /courses/:id to UPDATE a user
@@ -46,14 +46,12 @@ router.put(
 );
 
 // Route that creates a new user.
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', authenticateUser, asyncHandler(async (req, res) => {
     try {
     console.log(req.body)
       await Users.create(req.body);
-      res.status(201).json({ "message": "Account successfully created!" });
+      res.status(201).location('/').end();
     } catch (error) {
-      console.log('ERROR: ', error.name);
-  
       if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
         const errors = error.errors.map(err => err.message);
         res.status(400).json({ errors });   

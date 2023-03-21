@@ -4,7 +4,9 @@ const express = require('express');
 
 // Construct a router instance.
 const router = express.Router();
-const Course = require('../models').Course;
+const { Course } = require('../models');
+const { Users } = require('../models');
+
 
 const { authenticateUser } = require('../middleware/auth-user');
 
@@ -23,17 +25,24 @@ function asyncHandler(cb) {
 
 // Route that returns a list of course.
 router.get('/', asyncHandler(async (req, res) => {
-  let course = await Course.findAll();
+  let course = await Course.findAll({
+    include: [
+      {
+        model: Users,
+        as: 'Users'
+      }
+    ]
+  });
   res.json(course);
 }));
 
 
 // Route that creates a new Course.
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', authenticateUser, asyncHandler(async (req, res) => {
     try {
     console.log(req.body)
       await Course.create(req.body);
-      res.status(201).json({ "message": "Course successfully created!" });
+      res.status(201).location('/').end();
     } catch (error) {
       console.log('ERROR: ', error.name);
   
@@ -49,7 +58,14 @@ router.post('/', asyncHandler(async (req, res) => {
 // Send a GET request to /courses/:id to READ a single course
 router.get("/:id", async (req, res) => {
   try {
-    const course = await Course.findByPk(req.params.id);
+    const course = await Course.findByPk(req.params.id, {
+      include: [
+        {
+          model: Users,
+          as: 'Users'
+        }
+      ]
+    });
     if (course) {
       res.json(course);
     } else {
@@ -62,7 +78,7 @@ router.get("/:id", async (req, res) => {
 
 // Send a PUT request to /courses/:id to UPDATE a course
 router.put(
-  "/:id",
+  "/:id", authenticateUser, 
   asyncHandler(async (req, res) => {
     const course = await Course.findByPk(req.params.id);
     console.log(course);
@@ -72,7 +88,7 @@ router.put(
         where: { id: course.id }
       };
       await Course.update(updatedCourse, selector);
-      res.status(204).end();
+      res.status(204).location('/').end();
     } else {
       res.status(404).json({ message: "Course not found." });
     }
@@ -90,7 +106,7 @@ router.delete("/:id", async (req, res, next) => {
       res.status(404).json({ message: "Course not found." });
     }
   } catch (err) {
-    // res.status(500).json({message: err.message});
+    res.status(500).json({message: err.message});
     next(err);
   }
 });
