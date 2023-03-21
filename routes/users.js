@@ -46,7 +46,7 @@ router.put(
 );
 
 // Route that creates a new user.
-router.post('/', authenticateUser, asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req, res) => {
     try {
     console.log(req.body)
       await Users.create(req.body);
