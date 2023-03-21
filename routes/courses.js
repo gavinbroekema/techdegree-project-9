@@ -80,17 +80,24 @@ router.get("/:id", async (req, res) => {
 router.put(
   "/:id", authenticateUser, 
   asyncHandler(async (req, res) => {
-    const course = await Course.findByPk(req.params.id);
-    console.log(course);
-    if (course) {
-      const updatedCourse = req.body;
-      const selector = { 
-        where: { id: course.id }
-      };
+    try {
+      const course = await Course.findByPk(req.params.id);
+      console.log(course);
+      if (course) {
+        const updatedCourse = req.body;
+        const selector = { 
+          where: { id: course.id }
+        };
+      }
       await Course.update(updatedCourse, selector);
       res.status(204).location('/').end();
-    } else {
-      res.status(404).json({ message: "Course not found." });
+    } catch(error) {
+      if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+        const errors = error.errors.map(err => err.message);
+        res.status(400).json({ errors });   
+      } else {
+        throw error;
+      }
     }
   })
 );
